@@ -1,0 +1,5 @@
+**
+!build/
+!build/tasks/
+!build/tasks/_tenchou_executableJarJvm/
+!build/tasks/_tenchou_executableJarJvm/tenchou-jvm-executable.jar

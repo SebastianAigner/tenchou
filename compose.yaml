@@ -1,0 +1,17 @@
+services:
+  tenchou:
+    build: .
+    image: tenchou:latest
+    container_name: tenchou
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      TENCHOU_DATA_DIR: /data
+    volumes:
+      - tenchou_data:/data
+    ports:
+      - "8080:8080"
+
+volumes:
+  tenchou_data:
+

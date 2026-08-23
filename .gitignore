@@ -1,0 +1,10 @@
+.idea/
+build/
+data/
+frontend/dist/
+resources/web/
+dogfood-output/
+frontend/node_modules/
+frontend/src/routeTree.gen.ts
+*.xcarchive
+*.ipa

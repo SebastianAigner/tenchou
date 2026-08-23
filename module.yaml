@@ -1,0 +1,31 @@
+product: jvm/app
+
+description: A private, self-hosted iOS over-the-air application catalog.
+
+settings:
+  kotlin:
+    version: 2.4.10
+    serialization:
+      format: json
+      version: 1.11.0
+  ktor:
+    enabled: true
+    version: 3.5.2
+  jvm:
+    jdk:
+      version: 21
+    mainClass: io.sebi.tenchou.ApplicationKt
+
+dependencies:
+  - io.ktor:ktor-server-core-jvm
+  - io.ktor:ktor-server-netty-jvm
+  - io.ktor:ktor-server-content-negotiation-jvm
+  - io.ktor:ktor-serialization-kotlinx-json-jvm
+  - io.ktor:ktor-server-forwarded-header-jvm
+  - io.ktor:ktor-server-status-pages-jvm
+  - ch.qos.logback:logback-classic:1.5.18
+  - com.googlecode.plist:dd-plist:1.28
+
+test-dependencies:
+  - io.ktor:ktor-server-test-host-jvm
+  - io.ktor:ktor-client-content-negotiation-jvm
