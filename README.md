@@ -4,6 +4,8 @@ Tenchou is a small, self-hosted catalog for installing development or ad-hoc
 signed iOS applications over the air. It uses a React/TypeScript frontend with
 TanStack Router and Query, and a Kotlin/Ktor backend.
 
+![Tenchou app catalog](./docs/tenchou-app-catalog.png)
+
 ## Development
 
 ```sh
