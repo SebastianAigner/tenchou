@@ -9,6 +9,7 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.nio.file.Path
 import java.time.Instant
 import java.util.zip.ZipFile
@@ -47,15 +48,16 @@ object IpaInspector {
                 fileName in preferredNames || fileName.startsWith("AppIcon", true) || fileName.startsWith("Icon", true)
             }
             .mapNotNull { entry ->
-                runCatching {
+                try {
                     zip.getInputStream(entry).use { input ->
                         val bytes = input.readBytes()
-                        val image = ImageIO.read(ByteArrayInputStream(bytes)) ?: return@runCatching null
+                        val image = ImageIO.read(ByteArrayInputStream(bytes)) ?: return@mapNotNull null
                         Triple(image.width * image.height, entry.name, bytes)
                     }
-                }.getOrNull()
+                } catch (_: IOException) {
+                    null
+                }
             }
-            .filterNotNull()
             .maxByOrNull { it.first }
 
         InspectedIpa(
@@ -115,4 +117,3 @@ object IpaInspector {
     private fun NSDictionary.string(key: String): String? =
         (objectForKey(key) as? NSString)?.content?.takeIf { it.isNotBlank() }
 }
-

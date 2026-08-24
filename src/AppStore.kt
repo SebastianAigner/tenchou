@@ -1,7 +1,10 @@
 package io.sebi.tenchou
 
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -62,8 +65,13 @@ class AppStore(private val root: Path) {
 
     private fun readCatalog(): List<StoredApp> {
         if (!Files.exists(catalogPath)) return emptyList()
-        return runCatching { json.decodeFromString<List<StoredApp>>(Files.readString(catalogPath)) }
-            .getOrElse { error("Could not read ${catalogPath.fileName}: ${it.message}") }
+        return try {
+            json.decodeFromString<List<StoredApp>>(Files.readString(catalogPath))
+        } catch (exception: IOException) {
+            throw IllegalStateException("Could not read ${catalogPath.fileName}: ${exception.message}", exception)
+        } catch (exception: SerializationException) {
+            throw IllegalStateException("Could not read ${catalogPath.fileName}: ${exception.message}", exception)
+        }
     }
 
     private fun writeAtomically(bytes: ByteArray, target: Path) {
@@ -73,11 +81,10 @@ class AppStore(private val root: Path) {
     }
 
     private fun moveAtomically(source: Path, target: Path) {
-        runCatching {
+        try {
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        }.getOrElse {
+        } catch (_: AtomicMoveNotSupportedException) {
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
         }
     }
 }
-
