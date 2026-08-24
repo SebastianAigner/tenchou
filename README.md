@@ -18,16 +18,6 @@ The Vite development server proxies `/api`, `/artifacts`, `/install`, and
 
 ## Production
 
-```sh
-./dockerPush.sh
-```
-
-The deployment script builds the frontend and executable JAR on the development
-machine, packages that prebuilt JAR into a thin Linux ARM64 runtime image,
-pushes it to `registry.s17.xyz`, and asks Watchtower to roll it out. The Pi does
-not compile Tenchou, and Docker rebuilds do not need to download the Kotlin
-Toolchain or application dependencies.
-
 The Ktor backend is built, tested, run, and packaged with JetBrains' Kotlin
 Toolchain 0.11.1. The checked-in `./kotlin` wrapper pins and verifies the
 toolchain distribution.
