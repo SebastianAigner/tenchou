@@ -9,3 +9,4 @@ frontend/src/routeTree.gen.ts
 *.xcarchive
 *.ipa
 dockerPush.sh
+homeDockerNativePush.sh

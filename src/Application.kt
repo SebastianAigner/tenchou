@@ -29,11 +29,14 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+
+private val API_JSON = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
@@ -47,7 +50,7 @@ fun Application.tenchouModule(store: AppStore) {
     install(ForwardedHeaders)
     install(XForwardedHeaders)
     install(ContentNegotiation) {
-        json(Json { prettyPrint = true; ignoreUnknownKeys = true })
+        json(API_JSON)
     }
     install(StatusPages) {
         exception<Throwable> { call, cause ->
@@ -56,10 +59,14 @@ fun Application.tenchouModule(store: AppStore) {
                 is BadRequestException, is IllegalArgumentException, is IllegalStateException -> HttpStatusCode.BadRequest
                 else -> HttpStatusCode.InternalServerError
             }
-            call.respond(status, ApiError(cause.message ?: "Unexpected server error"))
+            call.respondText(
+                API_JSON.encodeToString(ApiError(cause.message ?: "Unexpected server error")),
+                ContentType.Application.Json,
+                status,
+            )
         }
         status(HttpStatusCode.NotFound) { call, status ->
-            call.respond(status, ApiError("Not found"))
+            call.respondText(API_JSON.encodeToString(ApiError("Not found")), ContentType.Application.Json, status)
         }
     }
 
@@ -70,7 +77,10 @@ fun Application.tenchouModule(store: AppStore) {
 
         get("/api/apps") {
             val baseUrl = call.publicBaseUrl()
-            call.respond(store.list().map { it.toSummary(baseUrl) })
+            call.respondText(
+                API_JSON.encodeToString(store.list().map { it.toSummary(baseUrl) }),
+                ContentType.Application.Json,
+            )
         }
 
         post("/api/apps") {
@@ -109,7 +119,11 @@ fun Application.tenchouModule(store: AppStore) {
                 val ipaPath = ipa ?: throw BadRequestException("Multipart field 'ipa' is required")
                 if (Files.size(ipaPath) == 0L) throw BadRequestException("The uploaded IPA is empty")
                 val app = store.publish(ipaPath, icon, title, subtitle)
-                call.respond(HttpStatusCode.Created, app.toSummary(call.publicBaseUrl()))
+                call.respondText(
+                    API_JSON.encodeToString(app.toSummary(call.publicBaseUrl())),
+                    ContentType.Application.Json,
+                    HttpStatusCode.Created,
+                )
             } finally {
                 staging.toFile().deleteRecursively()
             }

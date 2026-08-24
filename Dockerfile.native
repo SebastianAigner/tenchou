@@ -1,0 +1,43 @@
+# syntax=docker/dockerfile:1
+
+FROM ghcr.io/graalvm/native-image-community:25i2 AS native-builder
+
+RUN microdnf install -y fontconfig freetype \
+    && microdnf clean all
+
+WORKDIR /build
+
+COPY --link build/tasks/_tenchou_executableJarJvm/tenchou-jvm-executable.jar /build/tenchou.jar
+
+RUN mkdir /build/unpacked \
+    && cd /build/unpacked \
+    && jar -xf /build/tenchou.jar
+
+RUN native-image \
+    --no-fallback \
+    -march=compatibility \
+    --enable-url-protocols=http,https \
+    -Djava.awt.headless=true \
+    --initialize-at-build-time=ch.qos.logback,org.slf4j \
+    -H:+UnlockExperimentalVMOptions \
+    -H:+ReportExceptionStackTraces \
+    -H:IncludeResources='^(assets|web)/.*|^logback\.xml$|^kotlin/.*\.kotlin_builtins$' \
+    -H:-UnlockExperimentalVMOptions \
+    -cp '/build/unpacked/BOOT-INF/classes:/build/unpacked/BOOT-INF/lib/*' \
+    -o /build/tenchou \
+    io.sebi.tenchou.ApplicationKt
+
+FROM alpine:3.22
+
+RUN apk add --no-cache fontconfig freetype gcompat \
+    && mkdir -p /data \
+    && chown 100:101 /data
+
+COPY --link --from=native-builder /build/tenchou /build/*.so /app/
+
+USER 100:101
+
+ENV PORT=8080 TENCHOU_DATA_DIR=/data
+EXPOSE 8080
+
+ENTRYPOINT ["/app/tenchou"]
