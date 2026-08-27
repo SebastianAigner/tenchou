@@ -67,7 +67,9 @@ a { color: inherit; }
 .app-card + .app-card { border-top: 1px solid var(--hairline); }
 .app-icon { width: 78px; height: 78px; border-radius: 17px; object-fit: cover; background: #e8e8ed; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.12), 0 5px 14px rgba(0,0,0,.1); }
 .app-copy { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.app-copy h3 { margin: 0 0 4px; font-size: 20px; line-height: 1.1; letter-spacing: -.025em; }
+.app-title { display: flex; min-width: 0; align-items: center; gap: 8px; margin-bottom: 4px; }
+.app-copy h3 { min-width: 0; margin: 0; overflow: hidden; font-size: 20px; line-height: 1.1; letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
+.build-badge { flex: none; padding: 3px 7px; border-radius: 6px; background: #e8e8ed; color: #6e6e73; font-size: 11px; font-weight: 600; line-height: 1.2; }
 .app-copy p { margin: 0; overflow: hidden; color: var(--secondary); font-size: 14px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .app-meta { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; color: var(--secondary); font-size: 12px; }
 .expiry { padding: 4px 8px; border-radius: 7px; color: #287a3d; background: #e9f7ed; font-weight: 580; }
@@ -160,6 +162,7 @@ input[type="file"] { padding: 7px; }
   .site-nav a[aria-current="page"] { color: #f5f5f7; background: #3a3a3c; }
   .app-list, .upload-card, .instructions-card, .empty-state { background: rgba(28,28,30,.9); }
   .app-icon { background: #2c2c2e; }
+  .build-badge { background: #3a3a3c; color: #aeaeb2; }
   .section-heading span { background: #2c2c2e; }
   .file-drop { background: #18181a; border-color: #48484a; }
   .file-drop:hover { background: #101b27; }

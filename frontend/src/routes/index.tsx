@@ -53,11 +53,14 @@ function AppCard({ app }: { app: AppSummary }) {
       <img className="app-icon" src={app.iconUrl} alt="" />
       <div className="app-copy">
         <div>
-          <h3>{app.title}</h3>
+          <div className="app-title">
+            <h3>{app.title}</h3>
+            <span className="build-badge">Build {app.build}</span>
+          </div>
           <p>{app.subtitle}</p>
         </div>
         <div className="app-meta">
-          <span>v{app.version} ({app.build})</span>
+          <span>v{app.version}</span>
           {expiryLabel && (
             <span className={days !== null && days < 7 ? 'expiry urgent' : 'expiry'} title={expiry?.toLocaleString()}>
               {expiryLabel}
