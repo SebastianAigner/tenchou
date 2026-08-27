@@ -3,3 +3,6 @@
 !build/tasks/
 !build/tasks/_tenchou_executableJarJvm/
 !build/tasks/_tenchou_executableJarJvm/tenchou-jvm-executable.jar
+!frontend/
+!frontend/dist/
+!frontend/dist/**

@@ -12,7 +12,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.http.content.staticResources
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -22,7 +22,6 @@ import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
@@ -41,12 +40,13 @@ private val API_JSON = Json { prettyPrint = true; ignoreUnknownKeys = true }
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
     val dataDir = Path.of(System.getenv("TENCHOU_DATA_DIR") ?: "data")
+    val webDir = Path.of(System.getenv("TENCHOU_WEB_DIR") ?: "frontend/dist")
     embeddedServer(Netty, port = port, host = "0.0.0.0") {
-        tenchouModule(AppStore(dataDir))
+        tenchouModule(AppStore(dataDir), webDir)
     }.start(wait = true)
 }
 
-fun Application.tenchouModule(store: AppStore) {
+fun Application.tenchouModule(store: AppStore, webDir: Path = Path.of("frontend/dist")) {
     install(ForwardedHeaders)
     install(XForwardedHeaders)
     install(ContentNegotiation) {
@@ -171,23 +171,23 @@ fun Application.tenchouModule(store: AppStore) {
         }
 
         get("/") {
-            call.respondIndex()
+            call.respondIndex(webDir)
         }
 
         get("/publish") {
-            call.respondIndex()
+            call.respondIndex(webDir)
         }
 
-        staticResources("/", "web", index = "index.html")
+        staticFiles("/", webDir.toFile())
     }
 }
 
-private suspend fun ApplicationCall.respondIndex() {
-    val bytes = Thread.currentThread().contextClassLoader
-        .getResourceAsStream("web/index.html")
-        ?.use { it.readBytes() }
-        ?: return respond(HttpStatusCode.NotFound, ApiError("Frontend is not bundled"))
-    respondBytes(bytes, ContentType.Text.Html)
+private suspend fun ApplicationCall.respondIndex(webDir: Path) {
+    val index = webDir.resolve("index.html")
+    if (!Files.isRegularFile(index)) {
+        return respond(HttpStatusCode.NotFound, ApiError("Frontend files are unavailable"))
+    }
+    respondFile(index.toFile())
 }
 
 private fun StoredApp.toSummary(baseUrl: String): AppSummary {

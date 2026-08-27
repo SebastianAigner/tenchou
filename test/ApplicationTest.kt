@@ -14,6 +14,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -23,6 +25,19 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class ApplicationTest {
+    @Test
+    fun servesTheFrontendFromAnExternalDirectory() = testApplication {
+        val web = createTempDirectory("tenchou-web-")
+        web.resolve("index.html").writeText("<html><body>External Tenchou frontend</body></html>")
+        web.resolve("assets").createDirectories()
+        web.resolve("assets/app.js").writeText("window.externalFrontend = true")
+        application { tenchouModule(AppStore(createTempDirectory("tenchou-test-")), web) }
+
+        assertContains(client.get("/").bodyAsText(), "External Tenchou frontend")
+        assertContains(client.get("/publish").bodyAsText(), "External Tenchou frontend")
+        assertEquals("window.externalFrontend = true", client.get("/assets/app.js").bodyAsText())
+    }
+
     @Test
     fun reservesMonotonicBuildNumbersStartingAfterThePublishedBuild() = testApplication {
         val data = createTempDirectory("tenchou-test-")

@@ -17,7 +17,7 @@ RUN native-image \
     --initialize-at-build-time=ch.qos.logback,org.slf4j \
     -H:+UnlockExperimentalVMOptions \
     -H:+ReportExceptionStackTraces \
-    -H:IncludeResources='^(assets|web)/.*|^logback\.xml$|^kotlin/.*\.kotlin_builtins$' \
+    -H:IncludeResources='^assets/.*|^logback\.xml$|^kotlin/.*\.kotlin_builtins$' \
     -H:-UnlockExperimentalVMOptions \
     -cp '/build/unpacked/BOOT-INF/classes:/build/unpacked/BOOT-INF/lib/*' \
     -o /build/tenchou \
@@ -30,10 +30,11 @@ RUN apk add --no-cache gcompat \
     && chown 100:101 /data
 
 COPY --link --from=native-builder /build/tenchou /app/
+COPY --link frontend/dist/ /app/web/
 
 USER 100:101
 
-ENV PORT=8080 TENCHOU_DATA_DIR=/data
+ENV PORT=8080 TENCHOU_DATA_DIR=/data TENCHOU_WEB_DIR=/app/web
 EXPOSE 8080
 
 ENTRYPOINT ["/app/tenchou"]

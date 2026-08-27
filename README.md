@@ -22,6 +22,11 @@ The Ktor backend is built, tested, run, and packaged with JetBrains' Kotlin
 Toolchain 0.11.1. The checked-in `./kotlin` wrapper pins and verifies the
 toolchain distribution.
 
+Production images keep the Vite output in `/app/web`, outside the JVM and
+native executables. `TENCHOU_WEB_DIR` selects that directory and defaults to
+`frontend/dist` for local packaged-server runs. This lets frontend-only changes
+reuse the existing backend JAR and cached GraalVM Native Image layer.
+
 Persist `/data` and expose the service through HTTPS. iOS rejects over-the-air
 installation manifests and IPA URLs that are not served over HTTPS.
 
