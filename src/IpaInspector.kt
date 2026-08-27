@@ -1,19 +1,11 @@
 package io.sebi.tenchou
 
-import com.dd.plist.NSArray
 import com.dd.plist.NSDate
 import com.dd.plist.NSDictionary
 import com.dd.plist.NSString
 import com.dd.plist.PropertyListParser
-import java.awt.RenderingHints
-import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.nio.file.Path
-import java.time.Instant
 import java.util.zip.ZipFile
-import javax.imageio.ImageIO
 
 object IpaInspector {
     fun inspect(path: Path): InspectedIpa = ZipFile(path.toFile()).use { zip ->
@@ -38,28 +30,6 @@ object IpaInspector {
             zip.getInputStream(entry).use { parseProvisioningProfile(it.readBytes()) }
         }
 
-        val preferredNames = iconNames(info).flatMap { nameCandidate ->
-            listOf(nameCandidate, "$nameCandidate.png", "$nameCandidate@2x.png", "$nameCandidate@3x.png")
-        }.toSet()
-        val iconCandidates = zip.entries().asSequence()
-            .filter { !it.isDirectory && it.name.startsWith(appRoot) && it.name.endsWith(".png", true) }
-            .filter {
-                val fileName = it.name.substringAfterLast('/')
-                fileName in preferredNames || fileName.startsWith("AppIcon", true) || fileName.startsWith("Icon", true)
-            }
-            .mapNotNull { entry ->
-                try {
-                    zip.getInputStream(entry).use { input ->
-                        val bytes = input.readBytes()
-                        val image = ImageIO.read(ByteArrayInputStream(bytes)) ?: return@mapNotNull null
-                        Triple(image.width * image.height, entry.name, bytes)
-                    }
-                } catch (_: IOException) {
-                    null
-                }
-            }
-            .maxByOrNull { it.first }
-
         InspectedIpa(
             bundleId = bundleId,
             displayName = name,
@@ -67,23 +37,7 @@ object IpaInspector {
             build = build,
             signedUntil = profile?.second,
             provisioningProfile = profile?.first,
-            icon = iconCandidates?.third,
         )
-    }
-
-    fun pngAtSize(bytes: ByteArray, size: Int): ByteArray {
-        val source = ImageIO.read(ByteArrayInputStream(bytes))
-            ?: error("The supplied artwork is not a readable PNG or JPEG image")
-        val target = BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB)
-        val graphics = target.createGraphics()
-        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
-        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-        graphics.drawImage(source, 0, 0, size, size, null)
-        graphics.dispose()
-        return ByteArrayOutputStream().use { output ->
-            check(ImageIO.write(target, "png", output)) { "PNG encoding is unavailable" }
-            output.toByteArray()
-        }
     }
 
     private fun parseProvisioningProfile(bytes: ByteArray): Pair<String?, String?> {
@@ -98,20 +52,6 @@ object IpaInspector {
         val expiration = (dictionary.objectForKey("ExpirationDate") as? NSDate)?.date
             ?.toInstant()?.toString()
         return name to expiration
-    }
-
-    private fun iconNames(info: NSDictionary): List<String> {
-        val names = mutableListOf<String>()
-        fun addArray(value: Any?) {
-            (value as? NSArray)?.array?.forEach { item ->
-                (item as? NSString)?.content?.let(names::add)
-            }
-        }
-        addArray(info.objectForKey("CFBundleIconFiles"))
-        val icons = info.objectForKey("CFBundleIcons") as? NSDictionary
-        val primary = icons?.objectForKey("CFBundlePrimaryIcon") as? NSDictionary
-        addArray(primary?.objectForKey("CFBundleIconFiles"))
-        return names
     }
 
     private fun NSDictionary.string(key: String): String? =

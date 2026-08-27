@@ -24,10 +24,37 @@ import java.util.zip.ZipOutputStream
 
 class ApplicationTest {
     @Test
+    fun reservesMonotonicBuildNumbersStartingAfterThePublishedBuild() = testApplication {
+        val data = createTempDirectory("tenchou-test-")
+        application { tenchouModule(AppStore(data)) }
+
+        val first = client.post("/api/builds/io.sebi.fen.FenZN59W6SJ27/reserve")
+        assertEquals("1", Json.decodeFromString<BuildReservation>(first.bodyAsText()).build)
+        val second = client.post("/api/builds/io.sebi.fen.FenZN59W6SJ27/reserve")
+        assertEquals("2", Json.decodeFromString<BuildReservation>(second.bodyAsText()).build)
+
+        client.post("/api/apps") {
+            setBody(MultiPartFormDataContent(formData {
+                append("ipa", fixtureIpa(), Headers.build {
+                    append(HttpHeaders.ContentType, "application/octet-stream")
+                    append(HttpHeaders.ContentDisposition, "filename=Fen.ipa")
+                })
+            }))
+        }
+
+        val afterPublishedBuild = client.post("/api/builds/io.sebi.fen.FenZN59W6SJ27/reserve")
+        assertEquals("43", Json.decodeFromString<BuildReservation>(afterPublishedBuild.bodyAsText()).build)
+
+        val persistedStore = AppStore(data)
+        assertEquals("44", persistedStore.reserveNextBuild("io.sebi.fen.FenZN59W6SJ27"))
+    }
+
+    @Test
     fun uploadListsAndServesAnInstallableApp() = testApplication {
         val data = createTempDirectory("tenchou-test-")
         application { tenchouModule(AppStore(data)) }
         val ipa = fixtureIpa()
+        val icon = javaClass.getResourceAsStream("/assets/default-app-icon.png")!!.use { it.readBytes() }
 
         val upload = client.post("/api/apps") {
             header(HttpHeaders.XForwardedProto, "https")
@@ -38,6 +65,10 @@ class ApplicationTest {
                 append("ipa", ipa, Headers.build {
                     append(HttpHeaders.ContentType, "application/octet-stream")
                     append(HttpHeaders.ContentDisposition, "filename=Fen.ipa")
+                })
+                append("icon", icon, Headers.build {
+                    append(HttpHeaders.ContentType, "image/png")
+                    append(HttpHeaders.ContentDisposition, "filename=Fen.png")
                 })
             }))
         }
@@ -59,7 +90,8 @@ class ApplicationTest {
         assertContains(manifest, "io.sebi.fen.FenZN59W6SJ27")
 
         assertTrue(client.get("/artifacts/${app.id}/app.ipa").bodyAsBytes().contentEquals(ipa))
-        assertEquals(HttpStatusCode.OK, client.get("/artifacts/${app.id}/icon-57.png").status)
+        assertTrue(client.get("/artifacts/${app.id}/icon-57.png").bodyAsBytes().contentEquals(icon))
+        assertTrue(client.get("/artifacts/${app.id}/icon-512.png").bodyAsBytes().contentEquals(icon))
     }
 
     @Test

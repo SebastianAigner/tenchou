@@ -14,6 +14,7 @@ class AppStore(private val root: Path) {
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
     private val lock = Any()
     private val catalogPath = root.resolve("catalog.json")
+    private val buildCountersPath = root.resolve("build-counters.json")
 
     init {
         Files.createDirectories(root.resolve("apps"))
@@ -22,6 +23,20 @@ class AppStore(private val root: Path) {
     fun list(): List<StoredApp> = synchronized(lock) { readCatalog().sortedBy { it.title.lowercase() } }
 
     fun get(id: String): StoredApp? = synchronized(lock) { readCatalog().firstOrNull { it.id == id } }
+
+    fun reserveNextBuild(bundleId: String): String = synchronized(lock) {
+        require(bundleId.matches(Regex("[A-Za-z0-9.-]+"))) { "Invalid bundle identifier" }
+        val counters = readBuildCounters().toMutableMap()
+        val publishedBuild = readCatalog()
+            .firstOrNull { it.bundleId == bundleId }
+            ?.build
+            ?.toLongOrNull()
+            ?: 0L
+        val next = maxOf(counters[bundleId] ?: 0L, publishedBuild) + 1L
+        counters[bundleId] = next
+        writeAtomically(json.encodeToString(counters).toByteArray(), buildCountersPath)
+        next.toString()
+    }
 
     fun artifact(id: String): Path = root.resolve("apps").resolve(id).resolve("app.ipa")
 
@@ -38,12 +53,12 @@ class AppStore(private val root: Path) {
         Files.createDirectories(appDir)
 
         val artwork = customIcon?.let(Files::readAllBytes)
-            ?: inspected.icon
             ?: javaClass.getResourceAsStream("/assets/default-app-icon.png")?.use { it.readBytes() }
             ?: error("Default app artwork is missing")
+        require(artwork.isPng()) { "App artwork must be a PNG image" }
 
-        writeAtomically(IpaInspector.pngAtSize(artwork, 512), appDir.resolve("icon-512.png"))
-        writeAtomically(IpaInspector.pngAtSize(artwork, 57), appDir.resolve("icon-57.png"))
+        writeAtomically(artwork, appDir.resolve("icon-512.png"))
+        writeAtomically(artwork, appDir.resolve("icon-57.png"))
         moveAtomically(ipa, appDir.resolve("app.ipa"))
 
         val app = StoredApp(
@@ -74,6 +89,17 @@ class AppStore(private val root: Path) {
         }
     }
 
+    private fun readBuildCounters(): Map<String, Long> {
+        if (!Files.exists(buildCountersPath)) return emptyMap()
+        return try {
+            json.decodeFromString<Map<String, Long>>(Files.readString(buildCountersPath))
+        } catch (exception: IOException) {
+            throw IllegalStateException("Could not read ${buildCountersPath.fileName}: ${exception.message}", exception)
+        } catch (exception: SerializationException) {
+            throw IllegalStateException("Could not read ${buildCountersPath.fileName}: ${exception.message}", exception)
+        }
+    }
+
     private fun writeAtomically(bytes: ByteArray, target: Path) {
         val temporary = Files.createTempFile(target.parent, ".${target.fileName}", ".tmp")
         Files.write(temporary, bytes)
@@ -88,3 +114,9 @@ class AppStore(private val root: Path) {
         }
     }
 }
+
+private fun ByteArray.isPng(): Boolean = size >= 8 &&
+    this[0] == 0x89.toByte() && this[1] == 0x50.toByte() &&
+    this[2] == 0x4e.toByte() && this[3] == 0x47.toByte() &&
+    this[4] == 0x0d.toByte() && this[5] == 0x0a.toByte() &&
+    this[6] == 0x1a.toByte() && this[7] == 0x0a.toByte()

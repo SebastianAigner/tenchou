@@ -30,6 +30,9 @@ data class AppSummary(
 )
 
 @Serializable
+data class BuildReservation(val build: String)
+
+@Serializable
 data class ApiError(val error: String)
 
 data class InspectedIpa(
@@ -39,6 +42,4 @@ data class InspectedIpa(
     val build: String,
     val signedUntil: String?,
     val provisioningProfile: String?,
-    val icon: ByteArray?,
 )
-

@@ -83,6 +83,15 @@ fun Application.tenchouModule(store: AppStore) {
             )
         }
 
+        post("/api/builds/{bundleId}/reserve") {
+            val bundleId = call.parameters["bundleId"]
+                ?: throw BadRequestException("Bundle identifier is required")
+            call.respondText(
+                API_JSON.encodeToString(BuildReservation(store.reserveNextBuild(bundleId))),
+                ContentType.Application.Json,
+            )
+        }
+
         post("/api/apps") {
             val staging = Files.createTempDirectory("tenchou-upload-")
             var ipa: Path? = null

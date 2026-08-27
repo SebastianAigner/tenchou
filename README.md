@@ -31,6 +31,10 @@ installation manifests and IPA URLs that are not served over HTTPS.
 optional `icon`. See `/instructions.md` on a running server for the complete
 build and upload recipe.
 
+`POST /api/builds/{bundleId}/reserve` atomically reserves and returns the next
+numeric build for an app. Build scripts can pass the returned `build` value to
+Xcode as `CURRENT_PROJECT_VERSION` before uploading the resulting IPA.
+
 [`tenchou.example.sh`](./tenchou.example.sh) is a reusable one-command Xcode
 archive, export, and upload example. Copy it into an iOS project and provide
 the required Xcode container, scheme, and development team as environment

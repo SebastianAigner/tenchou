@@ -14,7 +14,7 @@ signed for every destination device before it is uploaded.
 4. In Organizer, choose **Distribute App → Custom → Development** (or **Ad Hoc**),
    keep automatic signing enabled, disable app thinning, and export the IPA.
 5. Upload the exported `.ipa` below. Tenchou reads its bundle ID, version,
-   embedded provisioning-profile expiry, and app icon when available.
+   and embedded provisioning-profile expiry.
 
 The Apple Development certificate used by Xcode is suitable when exporting with
 the Development method. The installed app only launches on device UDIDs included
@@ -32,7 +32,8 @@ curl --fail-with-body \\
   https://tenchou.in.s17.xyz/api/apps
 ```
 
-Add `-F "icon=@/absolute/path/icon.png"` to override the extracted/default icon.
+Add `-F "icon=@/absolute/path/icon.png"` to provide the app artwork. If omitted,
+Tenchou uses its bundled default icon. Artwork must be a PNG image.
 PNG and JPEG artwork are accepted. Re-uploading the same bundle ID replaces the
 currently offered build.
 
@@ -42,4 +43,3 @@ Open `https://tenchou.in.s17.xyz` in Safari on a registered iPhone or iPad and
 tap **Install**. Confirm the system installation prompt. HTTPS is mandatory for
 both the manifest and the IPA download.
 """
-
