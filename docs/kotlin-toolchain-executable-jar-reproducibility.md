@@ -1,4 +1,14 @@
-# Kotlin Toolchain executable JARs are not reproducible across unchanged package runs
+# Historical: Kotlin Toolchain executable JAR reproducibility issue
+
+## Resolution
+
+This document records the behavior originally observed with Kotlin Toolchain
+0.11.1. The issue is fixed in `0.13.0-dev-4333`, which Tenchou now pins.
+Independent validation in `kotlin-toolchain-jar-reproducer` confirmed that two
+forced clean rebuilds from identical inputs produce byte-identical executable
+JARs with identical ZIP timestamps and reuse the same Docker layer. Tenchou's
+deployment scripts therefore use `./kotlin package` directly; no fingerprint,
+package-skip, or archive-normalization workaround is needed.
 
 ## Summary
 
@@ -47,11 +57,10 @@ automated test:
 ./reproduce.sh
 ```
 
-The script packages twice without changing an input, compares the archives and
-their extracted trees, and builds a `FROM scratch` Docker image whose only
-filesystem layer is the executable JAR. It exits nonzero unless it observes the
-specific timestamp-only reproducibility failure and the resulting Docker layer
-invalidation.
+The current script validates both unchanged incremental packaging and two
+forced clean rebuilds. It recursively compares archive bytes, ZIP timestamps,
+and extracted payloads, then verifies Docker layer reuse. The historical
+0.11.1 result below predates the fix.
 
 The verified minimal run produced:
 
@@ -66,8 +75,8 @@ first Docker layer:  sha256:c6f64934ab3a513ea8086ed0d6438347c5da1639b474110c7a84
 second Docker layer: sha256:003bc47db80e1db9682196e25aee85d3efef9d7f790c6125e7378b26e0502f68
 ```
 
-The complete script, README, and concise captured evidence are committed in
-that repository as commit `d73eb50`.
+The original failing script and evidence were committed in that repository as
+commit `d73eb50`; newer versioned evidence records the fixed behavior.
 
 ## Minimal reproduction procedure
 

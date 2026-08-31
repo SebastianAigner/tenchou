@@ -19,7 +19,7 @@ The Vite development server proxies `/api`, `/artifacts`, `/install`, and
 ## Production
 
 The Ktor backend is built, tested, run, and packaged with JetBrains' Kotlin
-Toolchain 0.13.0-dev-4327. The checked-in `./kotlin` wrapper pins and verifies
+Toolchain 0.13.0-dev-4333. The checked-in `./kotlin` wrapper pins and verifies
 the toolchain distribution.
 
 Production images keep the Vite output in `/app/web`, outside the JVM and
