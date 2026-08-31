@@ -64,10 +64,10 @@ echo "✅ ⚛️ Frontend assets built."
 finish_phase "Frontend install and build"
 
 echo "🍯 Starting JAR build."
-./packageBackendIfNeeded.sh
+./kotlin package
 test -f "$executable_jar"
 echo "✅ 🍯 JAR build finished."
-finish_phase "Backend packaging check"
+finish_phase "Backend packaging"
 
 echo "🐳 Building GraalVM Native Image container."
 docker build --pull --platform linux/arm64 --file Dockerfile.native --tag "$local_image" .

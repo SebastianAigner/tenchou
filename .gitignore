@@ -8,5 +8,5 @@ frontend/node_modules/
 frontend/src/routeTree.gen.ts
 *.xcarchive
 *.ipa
-dockerPush.sh
+homeDockerPush.sh
 homeDockerNativePush.sh
