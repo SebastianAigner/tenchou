@@ -30,6 +30,25 @@ independent from backend compilation and packaging.
 Persist `/data` and expose the service through HTTPS. iOS rejects over-the-air
 installation manifests and IPA URLs that are not served over HTTPS.
 
+## Setting up an iOS app
+
+Whenever setting up Tenchou publishing for an app, **always ask the user whether
+they also want in-app auto-updating**: automatic checks for newer builds and an
+Update button that opens the iOS installer. Implement it if they accept, or
+continue with publishing alone if they decline. Record the choice in the app's
+project instructions; respect an answer already given during setup.
+
+The guide at `/instructions.md` (also shown on the Publish page) includes the
+complete integration recipe and a Swift helper. Its source is
+[`src/Instructions.kt`](./src/Instructions.kt). It covers build-number reservation,
+numeric `CFBundleVersion` comparison against `GET /api/apps`, launch/foreground
+and periodic checks, and opening the returned `installUrl` with a catalog fallback.
+It also explains the Kotlin Multiplatform equivalents used by Thoughtkeeper.
+
+The user taps Update, confirms the iOS prompt, and reopens the app after
+installation. State should be saved before the handoff, and existing signing
+and registered-device requirements still apply.
+
 ## Upload API
 
 `POST /api/apps` accepts multipart fields `ipa`, `title`, `subtitle`, and an
